@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Своя игра</title>
+<style>
+:root{--bg:#e7ebf5;--card:#fff;--ink:#111a3a;--mute:#566080;--tile:#1c3fd6;--strip:#0e1a5c;--gold:#ffd23f;--used:#cdd3e8;--line:#c3cae3;--ok:#178a4a;--bad:#c93a33;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#070b22;--card:#111a46;--ink:#eef1fb;--mute:#9aa6d1;--used:#141c4a;--line:#25306b;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#070b22;--card:#111a46;--ink:#eef1fb;--mute:#9aa6d1;--used:#141c4a;--line:#25306b;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+#app{max-width:620px;margin:0 auto;padding:14px 14px 32px}
+h1{margin:4px 0 2px;font-size:32px;font-weight:900;letter-spacing:-.01em}
+.sub{color:var(--mute);margin:4px 0 14px}
+button{font:inherit;font-weight:700;border:0;border-radius:10px;padding:12px 16px;min-height:46px;background:var(--gold);color:#1a1400;cursor:pointer}
+button:active{transform:scale(.97)}
+button:disabled{opacity:.35;cursor:default;transform:none}
+:focus-visible{outline:3px solid #6c8cff;outline-offset:2px}
+@media (prefers-reduced-motion:reduce){button:active{transform:none}}
+.ghost{background:transparent;color:var(--ink);border:1.5px solid var(--line)}
+.btn{display:block;width:100%;margin-top:12px}
+input{font:inherit;width:100%;min-height:46px;padding:10px 12px;border-radius:10px;border:1.5px solid var(--line);background:var(--card);color:var(--ink)}
+.row{display:flex;gap:8px;margin-bottom:8px;align-items:center}
+.score{display:flex;gap:6px;overflow-x:auto;margin:10px 0 2px;padding-bottom:4px}
+.chip{flex:1 0 auto;min-width:88px;background:var(--strip);color:#fff;border-radius:10px;padding:8px 10px;text-align:center;font-weight:700;white-space:nowrap}
+.chip b{display:block;font-size:22px;color:var(--gold)}
+.chip.neg b{color:#ff8f87}
+.blk{margin-top:12px;border-radius:12px;overflow:hidden;background:var(--strip)}
+.th{padding:10px 14px;color:#fff;font-weight:800;font-size:17px}
+.cells{display:grid;grid-template-columns:repeat(5,1fr);gap:2px;padding:0 2px 2px}
+.cell{border-radius:0;min-height:56px;padding:0;background:var(--tile);color:var(--gold);font-size:20px;font-weight:900;font-variant-numeric:tabular-nums}
+.cell:disabled{background:var(--used);color:transparent;opacity:1}
+.qh{display:flex;align-items:center;gap:10px;margin:2px 0 10px}
+.qh h2{margin:0;flex:1;font-size:19px}
+.pt{background:var(--strip);color:var(--gold);font-weight:900;border-radius:20px;padding:4px 12px}
+.qcard{background:var(--tile);color:#fff;border-radius:16px;padding:24px 18px;font-size:22px;line-height:1.35;font-weight:600;min-height:150px;display:flex;align-items:center}
+.ans{margin-top:12px;background:var(--card);border-left:6px solid var(--ok);border-radius:6px 14px 14px 6px;padding:14px 16px;font-size:21px}
+.ans small{display:block;color:var(--mute);font-size:14px}
+.chip.cur{outline:3px solid var(--gold);outline-offset:-3px}
+.sub b{color:var(--ink)}
+.turn{margin-top:14px;background:var(--strip);color:#fff;border-radius:10px;padding:10px 14px;font-size:18px;font-weight:700}
+.turn b{color:var(--gold)}
+.pl{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.pbtn{min-height:60px;padding:8px 10px;overflow:hidden;text-overflow:ellipsis;font-size:17px}
+.pbtn small{display:block;font-size:14px;font-weight:600;opacity:.65}
+.turn small{display:block;margin-top:2px;color:#b9c3f0;font-size:14px;font-weight:500}
+.ok,.no{color:#fff;padding:10px 12px;min-width:76px}
+.ok{background:var(--ok)}
+.no{background:var(--bad)}
+.rk{display:flex;justify-content:space-between;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:8px;font-size:18px;font-weight:700}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+var D=[
+["Космос",[
+["Какая планета самая горячая в Солнечной системе, хотя и не ближайшая к Солнцу?","Венера"],
+["Как называется вулкан на Марсе — самая высокая гора Солнечной системы, около 22 км?","Олимп"],
+["Скафандр этого космонавта в 1965 году раздулся в открытом космосе, и в шлюз он вернулся с трудом. Кто он?","Алексей Леонов"],
+["За сколько минут примерно свет Солнца долетает до Земли?","Примерно за 8 минут"],
+["Средняя плотность этой планеты с кольцами меньше плотности воды. Что за планета?","Сатурн"]]],
+["Животные",[
+["Сколько сердец у осьминога?","Три"],
+["Отпечатки пальцев этого сумчатого почти не отличить от человеческих. Кто это?","Коала"],
+["Глаз этой самой крупной птицы больше, чем её мозг. Назовите птицу.","Страус"],
+["Какой вкус не чувствуют кошки: у них нет рецепторов к нему?","Сладкий"],
+["Какая арктическая акула может жить около 400 лет?","Гренландская полярная акула"]]],
+["Еда и напитки",[
+["Какой продукт не портится веками: его съедобным находили даже в египетских гробницах?","Мёд"],
+["Ботаники считают ягодой этот фрукт, а клубнику — нет. Какой?","Банан"],
+["Чем часто заменяют настоящий васаби в суши-барах?","Хреном (с зелёным красителем)"],
+["Какая пряность — одна из самых дорогих в мире: её делают из рылец цветка крокуса?","Шафран"],
+["По легенде, этот напиток открыл эфиопский пастух Калди, заметив бодрость своих коз. Что за напиток?","Кофе"]]],
+["Тело человека",[
+["Сколько костей у взрослого человека?","206"],
+["Какой орган весит около 2% массы тела, но потребляет около 20% энергии?","Мозг"],
+["Какая кислота содержится в желудочном соке?","Соляная"],
+["Как называется самая твёрдая ткань человеческого тела, покрывающая зубы?","Эмаль"],
+["Сколько примерно литров крови в теле взрослого человека?","Около 5 литров"]]],
+["География",[
+["Какая река — самая длинная в Европе?","Волга"],
+["Флаг какой страны — единственный в мире не прямоугольный и не квадратный?","Непал"],
+["Какое государство — самое маленькое в мире по площади?","Ватикан"],
+["Какое озеро — самое глубокое на планете, более 1600 метров?","Байкал"],
+["Территория какой страны находится сразу в четырёх полушариях?","Кирибати"]]],
+["Техника",[
+["Кто получил в 1876 году первый патент на телефон?","Александр Белл"],
+["От чешского слова «robota», то есть «тяжёлый труд», произошло слово… какое?","Робот"],
+["Какого цвета «чёрный ящик» самолёта на самом деле?","Оранжевого"],
+["Из какого материала был корпус первой компьютерной мыши Дугласа Энгельбарта?","Из дерева"],
+["Какой символ Рэй Томлинсон выбрал в 1971 году для адресов электронной почты?","@ («собака»)"]]]
+];
+var S={screen:'setup',names:['Игрок 1','Игрок 2','Игрок 3'],players:[],board:[],q:null,turn:0,last:''};
+var esc=s=>String(s).replace(/[&<>\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+var sh=a=>a.map(x=>[Math.random(),x]).sort((a,b)=>a[0]-b[0]).map(x=>x[1]);
+var allDone=()=>S.board.every(t=>t.q.every(x=>x.done));
+var pr=()=>(S.q.i+1)*100;
+var setupV=()=>`<h1>Своя игра</h1><p class="sub">Викторина из интересных фактов. Введите имена игроков или команд; телефон держит ведущий.</p>`+
+S.names.map((n,i)=>`<div class="row"><input value="${esc(n)}" maxlength="16" aria-label="Имя игрока ${i+1}" oninput="S.names[${i}]=this.value">${S.names.length>2?`<button class="ghost" aria-label="Убрать игрока" onclick="delP(${i})">✕</button>`:''}</div>`).join('')+
+(S.names.length<6?`<button class="ghost btn" onclick="addP()">Добавить игрока</button>`:'')+
+`<button class="btn" onclick="go()">Начать игру</button><p class="sub">Игроки по очереди выбирают тему и цену вопроса, а ведущий нажимает на имя того, кто отвечает. Он же может открыть ответ, прочитать его и снова скрыть. Если ответ неверный, игрок теряет очки, а ведущий снова выбирает, кто отвечает.</p>`;
+var scoreV=cur=>`<div class="score">${S.players.map((p,k)=>`<div class="chip${p.s<0?' neg':''}${k==cur?' cur':''}">${esc(p.n)}<b>${p.s}</b></div>`).join('')}</div>`;
+var boardV=()=>`<h1>Своя игра</h1>${scoreV(S.turn)}<p class="sub">Тему и цену выбирает: <b>${esc(S.players[S.turn].n)}</b></p>`+
+S.board.map((t,c)=>`<div class="blk"><div class="th">${t.t}</div><div class="cells">${t.q.map((x,i)=>`<button class="cell" ${x.done?'disabled':''} aria-label="${t.t}, ${(i+1)*100}" onclick="pick(${c},${i})">${(i+1)*100}</button>`).join('')}</div></div>`).join('')+
+`<button class="ghost btn" onclick="fin()">Завершить игру</button>`;
+function qV(){
+ var Q=S.q,t=S.board[Q.c],x=t.q[Q.i],p=pr();
+ return `<div class="qh">${Q.bad.length||Q.done?'':'<button class="ghost" onclick="back()">Назад</button>'}<h2>${t.t}</h2><span class="pt">${p}</span></div>
+<div class="qcard">${x.q}</div>
+`+(Q.done?`<div class="ans"><small>Ответ</small>${x.a}</div><p class="sub">${Q.msg}</p><button class="btn" onclick="back()">Дальше</button>`:
+Q.cur<0?`<div class="turn">Кто отвечает?<small>${Q.note?Q.note+'. ':''}Нажмите на имя игрока, который будет отвечать.</small></div><div class="pl">${S.players.map((pl,k)=>`<button class="pbtn" ${Q.bad.includes(k)?'disabled':''} onclick="ans(${k})">${esc(pl.n)}<small>${pl.s}</small></button>`).join('')}</div><button class="ghost btn" onclick="skip()">Никто не ответил</button>`:`<div class="turn">Отвечает: <b>${esc(S.players[Q.cur].n)}</b>${Q.note?`<small>${Q.note}</small>`:''}</div><button class="ghost btn" onclick="reveal()">${Q.rev?'Скрыть ответ':'Показать ответ'}</button>${Q.rev?`<div class="ans"><small>Ответ</small>${x.a}</div>`:''}<div class="row" style="margin-top:12px"><button class="ok" style="flex:1" onclick="right()">Верно +${p}</button><button class="no" style="flex:1" onclick="wrong()">Неверно −${p}</button></div><div class="row"><button class="ghost" style="flex:1" onclick="pass()">Пропустить ход</button><button class="ghost" style="flex:1" onclick="skip()">Никто не ответил</button></div>`);
+}
+function endV(){
+ var r=S.players.slice().sort((a,b)=>b.s-a.s),left=!allDone(),m=['🥇','🥈','🥉'],w=r.filter(p=>p.s==r[0].s).map(p=>esc(p.n)).join(' и ');
+ return `<h1>${left?'Текущий счёт':'Игра окончена'}</h1><p class="sub">${left?'Можно вернуться к доске и доиграть.':'Побеждает: '+w+' 🎉'}</p>`+
+ r.map((p,k)=>`<div class="rk"><span>${m[k]||(k+1)+'.'} ${esc(p.n)}</span><b>${p.s}</b></div>`).join('')+
+ (left?`<button class="btn" onclick="resume()">Вернуться к игре</button>`:'')+
+ `<button class="btn${left?' ghost':''}" onclick="again()">Новая игра</button>`;
+}
+function render(){
+ var v={setup:setupV,board:boardV,q:qV,end:endV};
+ document.getElementById('app').innerHTML=v[S.screen]();
+ if(S.last!==S.screen){window.scrollTo(0,0);S.last=S.screen}
+}
+function addP(){if(S.names.length<6)S.names.push('Игрок '+(S.names.length+1));render()}
+function delP(i){if(S.names.length>2)S.names.splice(i,1);render()}
+function go(){
+ if(S.names.length<2){alert('Добавьте минимум двух игроков.');return}
+ S.players=S.names.map((n,i)=>({n:n.trim()||'Игрок '+(i+1),s:0}));S.turn=0;
+ S.board=sh(D).slice(0,5).map(t=>({t:t[0],q:t[1].map(x=>({q:x[0],a:x[1],done:0}))}));
+ S.screen='board';render();
+}
+function pick(c,i){if(S.board[c].q[i].done)return;S.q={c:c,i:i,rev:0,done:0,bad:[],cur:-1,note:'',msg:''};S.screen='q';render()}
+function reveal(){S.q.rev=!S.q.rev;render()}
+function ans(k){S.q.cur=k;render()}
+function close1(m){S.turn=(S.turn+1)%S.players.length;S.q.done=1;S.q.rev=1;S.q.msg=m;S.board[S.q.c].q[S.q.i].done=1}
+function right(){var k=S.q.cur;S.players[k].s+=pr();close1(esc(S.players[k].n)+' получает +'+pr());render()}
+function miss(pen){
+ var Q=S.q,n=S.players.length,nm=esc(S.players[Q.cur].n);
+ if(pen)S.players[Q.cur].s-=pr();
+ Q.note=nm+(pen?': −'+pr():': пропуск');Q.bad.push(Q.cur);Q.cur=-1;Q.rev=0;
+ if(Q.bad.length<n)return render();
+ close1('Никто не угадал');render();
+}
+function wrong(){miss(1)}
+function pass(){miss(0)}
+function skip(){close1('Никто не ответил');render()}
+function back(){S.q=null;S.screen=allDone()?'end':'board';render()}
+function fin(){S.screen='end';render()}
+function resume(){S.screen='board';render()}
+function again(){S.names=S.players.map(p=>p.n);S.screen='setup';render()}
+render();
+</script>
+</body>
+</html>
